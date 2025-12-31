@@ -1,16 +1,16 @@
-name: Terraform CI
+name: Terraform CI/CD
 
 on:
   pull_request:
     branches: [ "main" ]
 
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
+  push:
+    branches: [ "main" ]
 
-    permissions:
-      contents: read
-      pull-requests: write
+jobs:
+  terraform-plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -19,16 +19,45 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Terraform Init
-        uses: terraform init
+        run: terraform init
 
       - name: Terraform Format Check
-        uses: terraform fmt -check
+        run: terraform fmt -check
 
       - name: Terraform Validate
-        uses: terraform validate
+        run: terraform validate
 
       - name: Terraform Plan
-        uses: terraform plan
+        run: terraform plan
 
-      
+  terraform-apply:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
