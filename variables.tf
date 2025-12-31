@@ -11,7 +11,7 @@ variable "vpc_cidr_block" {
   default = "10.1.0.0/16"
 }
 variable "env" {
-  default = "Dev"
+  default = "dev"
 }
 
 variable "ami_image" {
